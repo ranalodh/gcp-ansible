@@ -1,12 +1,10 @@
-#!/bin/bash
 #*****************************************************************************
 #
 #Author:     Ranadip Lodh
-#Purpose:    This shell script use to Start Docker Service
-#Date:       20/04/2020
+#Purpose:    This Docker file use to install memcached container
+#Date:       07/04/2020
 #
 #*****************************************************************************
+FROM memcached:1.5.19
 
-service docker start
-sudo chown $USER /var/run/docker.sock
-
+EXPOSE 11211
