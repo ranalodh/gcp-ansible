@@ -1,0 +1,35 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO RUN PLATFORM HEALTH CHECK SCRIPT.
+#Date:       30/06/2020
+#
+#*****************************************************************************
+---
+- hosts: "{{ host }}"
+  remote_user: "{{ user }}"
+  strategy: free
+  gather_facts: no
+  
+  tasks:
+    - name: Register Host Name
+      command: hostname --fqdn
+      register: result
+      
+    - name: "Artifact results to Tower Workflows"
+      set_stats:
+       data:
+        host_name:  "{{ result.stdout }}"
+        
+    - name: Test Ping
+      ping:
+        
+    - name: Check if sshd is running
+      command: systemctl status sshd
+      register: sshd_check
+      ignore_errors: yes
+      no_log: False
+      failed_when: false   
+      
+          
+     

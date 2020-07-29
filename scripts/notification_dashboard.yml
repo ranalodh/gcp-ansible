@@ -1,0 +1,60 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO GENERATE REPORT AND SEND NOTIFICATION.
+#Date:       08/06/2020
+#
+#*****************************************************************************
+---
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  vars:
+    #- mail_content: "PFA Job Monitor - Dashboard Error Report Files in DashboardErrorReport.zip. This Zip File consist of HTML Report and Snaps captured from Oozie Dashboard Error #Logs.\n"
+    - mail_footer: "\n\nThank You, \nJob Monitor \n\n**** System generated mail. This email box is not monitored, please do not reply or send mails to this ID ****"   
+    
+  tasks:  
+    - name: Create a zip archive of Selenium Script Execution
+      archive:
+        path: 
+        - /home/selenium_script/selenium_code/target/screenshots/
+        - /home/selenium_script/selenium_code/Reports/
+        dest: /home/selenium_script/DashboardErrorReport.zip
+        format: zip
+        
+    - name: Create a directory if it does not exist
+      file:
+        path: "{{ folderpath }}/ansible_script"
+        state: directory
+        mode: '0755'
+          
+    - name: Transfer executable script script
+      copy: src=get_jobid_list.sh dest="{{ folderpath }}/ansible_script" mode=0777
+        
+      #- name: Install dos2unix
+      #  command: sudo yum install dos2unix -y
+        
+      #- name: Run dos2unix on shell file
+      #  command: dos2unix /home/ec2-user/ansible_script/get_jobid_list.sh.sh    
+ 
+    - name: Execute the script      
+      command: sh {{ folderpath }}/ansible_script/get_jobid_list.sh "{{ screenshot_path }}"
+      register: result    
+             
+    - name: Send Notification
+      mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        #username: "{{ sender_email_id }}"
+        #password: "{{ sender_email_password }}"
+        from: "{{ from_user_id }}"
+        to: "{{ recipient_email_ids }}"
+        subject: "{{ mail_subject }}"
+        body: "{{ result.stdout }} {{ mail_footer }}"
+        attach:
+        - /home/selenium_script/DashboardErrorReport.zip
+        secure: never
+        
+    - name: Delete selenium_script folder after send Notification
+      shell: rm -rf {{ reportpath }}/selenium_script
+      #shell: rm -rf {{ folderpath }}/ansible_script

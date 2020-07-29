@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  gather_facts: False
+
+  tasks:
+   - name: Fetch Chromium version
+     shell: chromium-browser --product-version                                                                                                                           
+     changed_when: False
+     register: chromium_result
+     failed_when: false
+
+   - debug: 
+       msg: "No chromium or something failed"
+     when: chromium_result.rc!=0
+
+   - debug:
+       msg: "{{ chromium_result.stdout }}"
+     when: chromium_result.rc==0

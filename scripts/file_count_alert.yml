@@ -1,0 +1,46 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO CHECK FILE COUNT BASED ON STATUS
+#Date:       28/05/2020
+#
+#*****************************************************************************
+---
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  tasks:          
+      - name: Execute the script ccn_check on Host hdp2-dwr0031
+        expect:
+          command: ssh -o StrictHostKeyChecking=no {{ username }}@{{ host }} -v
+          responses:
+             (?i)password: "{{ password }}"
+             command: sh /apps/hadoop_spark/ibm_apps/ccn_report_automation/ccn_check.sh {{ timestamp }}
+             shell: "sleep 1000"   
+        register: ccn_check_output
+        ignore_errors: yes 
+        
+      #- debug:
+          #var: ccn_check_output
+
+      - name: Create a directory if it does not exist
+        file:
+          path: "{{ folderpath }}/ansible_script"
+          state: directory
+          mode: '0777'
+          
+      - name: Transfer executable script script
+        copy: src=file_count_check.sh dest="{{ folderpath }}/ansible_script" mode=0777
+          
+      - name: Execute the script      
+        command: sh {{ folderpath }}/ansible_script/file_count_check.sh "{{ timestamp }}" "{{ ccn_check_output.stdout }}" "{{ th_val_1 }}" "{{ th_val_2 }}" "{{ th_val_3 }}"
+        register: result
+          
+      - name: Exit if nothing to upgrade
+        fail: msg="Fail if any hreshold value of number of file with <status>"
+        when: result.stdout is search("TRUE")
+        #ignore_errors: yes
+        
+      - name: Delete ansible_script folder after Execution
+        shell: rm -rf {{ folderpath }}/ansible_script
+     

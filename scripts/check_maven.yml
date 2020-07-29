@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  gather_facts: False
+
+  tasks:
+   - name: Fetch Maven version
+     shell: mvn -v 2>&1 | grep Maven | awk '{print $3}'                                                                                                                                   
+     changed_when: False
+     register: maven_result
+     failed_when: false
+
+   - debug: 
+       msg: "No Maven or something failed"
+     when: maven_result.rc!=0
+
+   - debug:
+       msg: "{{ maven_result.stdout }}"
+     when: maven_result.rc==0

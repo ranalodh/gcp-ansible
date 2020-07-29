@@ -1,0 +1,26 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO GENERATE REPORT AND SEND NOTIFICATION.
+#Date:       08/06/2020
+#
+#*****************************************************************************
+---
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  vars:
+    - mail_content_failure: "SSHD Srevice is not running on Host - {{ host_name }}. \n\nThank You, \nJob Monitor \n\n**** System generated mail. This email box is not monitored, please do not reply or send mails to this ID ****"    
+    
+  tasks:        
+    - name: Send Notification
+      mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        #username: "{{ sender_email_id }}"
+        #password: "{{ sender_email_password }}"
+        from: "{{ from_user_id }}"
+        to: "{{ recipient_email_ids }}"
+        subject: "{{ mail_subject }} "
+        body: "{{ mail_content_failure }}"
+        secure: never

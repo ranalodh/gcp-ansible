@@ -1,0 +1,60 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO GENERATE REPORT AND SEND NOTIFICATION.
+#Date:       08/06/2020
+#
+#*****************************************************************************
+---
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  vars:
+    #- disk_result: "{{ diskcheck_result_1 }} \n{{ diskcheck_result_2 }} \n{{ diskcheck_result_3 }} \n{{ diskcheck_result_4 }} \n{{ diskcheck_result_5 }} \n{{ diskcheck_result_6 }}"
+    #- mail_content: "PFA Job Monitor - Platform Health Check Report Files. \n\nThank You, \nJob Monitor \n\n**** System generated mail. This email box is not monitored, please do #not reply or send mails to this ID ****"
+    #- mail_body: "{{ mail_content }} {{ disk_result }} {{ mail_footer }}"    
+    
+  tasks:
+    - name: Generate Report from Target Nodes  
+      shell: awk '{print}' /tmp/tmp_reports/*.log > /tmp/tmp_reports/Health_Check_Report.log    
+      
+    - name: Create a directory and File for logging Report
+      file:
+        path: "{{ reportpath }}/ansible_report"  
+        state: directory
+        mode: '0755'
+        
+    - name: Copy consolidated outpot to Report Folder  
+      copy: src=/tmp/tmp_reports/Health_Check_Report.log dest={{ reportpath }}/ansible_report/
+      
+    - debug: msg="{{lookup('file', '/tmp/tmp_reports/Health_Check_Report.log') }}"
+      
+    - name: "Artifact Disk Check results to Tower Workflows"
+      set_stats:
+       data:
+        mail_body: "{{ mail_content }} {{ disk_result }} {{ mail_footer }}"
+        
+    - name: Exit if nothing to upgrade
+      fail: msg="Fail this Job if disk_result is empty"
+      when: disk_result == ""
+      #ignore_errors: yes
+        
+    #- name: Copy consolidated outpot to log
+    #  copy: content={{ disk_result }} dest={{ reportpath }}/ansible_report/Health_Check_Report.log 
+      
+    - name: Send Notification
+      mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        #username: "{{ sender_email_id }}"
+        #password: "{{ sender_email_password }}"
+        from: "{{ from_user_id }}"
+        to: "{{ recipient_email_ids }}"
+        subject: "{{ mail_subject }}"
+        body: "{{ mail_body }}" 
+        attach:
+        - "{{ reportpath }}/ansible_report/Health_Check_Report.log"    
+        secure: never
+      
+    - name: Delete ansible_report folder after send Notification  
+      shell: rm -rf {{ reportpath }}/ansible_report    

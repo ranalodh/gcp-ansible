@@ -1,0 +1,54 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO GENERATE REPORT AND SEND NOTIFICATION.
+#Date:       29/04/2020
+#
+#*****************************************************************************
+---
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  vars:
+    - disk_result: "{{ diskcheck_result_1 }} \n{{ diskcheck_result_2 }} \n{{ diskcheck_result_3 }} \n{{ diskcheck_result_4 }} \n{{ diskcheck_result_5 }} \n{{ diskcheck_result_6 }}"
+    - mail_content: "PFA Digital QA Execution files. \n\nThank You, \nDigital QA \n\n**** System generated mail. This email box is not monitored, please do not reply or send mails to this ID ****"  
+    
+  tasks:       
+    - name: Create a directory and File for logging Report
+      file:
+        path: "{{ reportpath }}/ansible_report"  
+        state: directory
+        mode: '0755'
+       
+    - name: Copy consolidated outpot to log
+      copy: content={{ disk_result }} dest={{ reportpath }}/ansible_report/Health_Check_Report.log      
+    
+    - name: Create a zip archive of Selenium Script Execution
+      archive:
+        path: 
+        - /home/selenium_script/selenium_code/target/screenshots/
+        - /home/selenium_script/selenium_code/Reports/
+        dest: /home/selenium_script/DashboardErrorReport.zip
+        format: zip 
+        
+    - name: Send Notification
+      mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        #username: "{{ sender_email_id }}"
+        #password: "{{ sender_email_password }}"
+        from: "{{ from_user_id }}"
+        to: "{{ recipient_email_ids }}"
+        subject: "{{ mail_subject }}"
+        body: "{{ mail_content }}"
+        attach:
+        - "{{ reportpath }}/ansible_report/Health_Check_Report.log"
+        - /home/selenium_script/DashboardErrorReport.zip
+        secure: never
+        
+    - name: Delete selenium_script folder after send Notification
+      shell: rm -rf {{ reportpath }}/selenium_script
+      
+    - name: Delete ansible_report folder after send Notification  
+      shell: rm -rf {{ reportpath }}/ansible_report
+      

@@ -1,0 +1,18 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO CHROMIUM BROWSER
+#Date:       29/04/2020
+#
+#*****************************************************************************
+- name: Install latest chromium browser
+  hosts: localhost 
+  strategy: free
+  gather_facts: no
+  tasks:  
+  - name: Install Chromium  
+    command: "{{item}}"
+    with_items:
+     - yum install sudo -y
+     - sudo yum update -y 
+     - sudo yum install chromium -y 

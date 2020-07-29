@@ -1,0 +1,38 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO INSTALL MAVEN 3.3.9
+#Date:       30/03/2020
+#
+#*****************************************************************************
+- name: Install Maven
+  hosts: localhost
+  strategy: free
+  gather_facts: no
+  tasks:
+  - name: Create /opt directory
+    file: path=/opt state=directory
+  
+  #- name: Download Maven3
+   # get_url: dest=/opt/maven-3.3.9-bin.tar.gz url=http://apache.proserve.nl/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+  
+  - name: Transfer Maven Installation File
+    copy: src=./jobmonitor-indosat/packages/apache-maven-3.3.9-bin.tar.gz dest=/opt mode=0777
+        
+  - name: Unpack Maven3
+    action: command creates=/opt/maven chdir=/opt tar zxvf /opt/apache-maven-3.3.9-bin.tar.gz
+
+  - name: Create Maven3 directory link
+    file: path=/opt/maven src=/opt/apache-maven-3.3.9 state=link
+  
+  - name: Set mvn link
+    action: command update-alternatives --install /usr/bin/mvn mvn /opt/maven/bin/mvn 1
+    
+  - name: Export Maven Path
+    shell: export PATH=/opt/apache-maven-3.3.9/bin:$PATH
+    
+  - name: echo PATH
+    shell: echo $PATH
+    
+  - name: Remove Maven3 archive
+    file: path=/opt/apache-maven-3.3.9-bin.tar.gz state=absent

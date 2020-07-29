@@ -1,0 +1,41 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO EXECUTE SELENIUM SCRIPT.
+#Date:       29/04/2020
+#
+#*****************************************************************************
+---   
+- hosts: localhost
+  strategy: free
+  gather_facts: no
+  tasks:
+  - name: Create a directory if it does not exist
+    file:
+     path: "{{ folderpath }}/selenium_script"
+     state: directory
+     mode: '0755'
+        
+  - name: Transfer selenium
+    copy: src=./selenium_code dest="{{ folderpath }}/selenium_script" mode=0777
+    
+  - name: Transfer selenium
+    shell: chmod -R 0777 {{ folderpath }}/selenium_script/selenium_code
+ 
+  - name: Change Dir and execute script
+    shell: touch selenium_code
+    shell: mvn -o compile test -Dsurefire.suiteXmlFiles=oozietestng.xml -Dapplicationname={{ applicationname }} -Dtargetenv={{ targetenv }} -Dusername={{ username }} -Dpassword={{ password }}
+    args:       
+       chdir: "{{ folderpath }}/selenium_script/selenium_code"
+       executable: /bin/bash    
+    environment:
+      MAVEN_HOME: /opt/maven/
+      JAVA_HOME: /opt/oracle/java/jdk-12.0.1
+    register: execution_result 
+
+  - name: "mvn clean task output"
+    debug:
+     var: execution_result
+     
+  - name: Kill Open Chrome Browser
+    shell: pkill chrome  

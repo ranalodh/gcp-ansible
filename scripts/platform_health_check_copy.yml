@@ -1,0 +1,59 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    THIS YAML IS USE TO RUN PLATFORM HEALTH CHECK SCRIPT.
+#Date:       29/04/2020
+#
+#*****************************************************************************
+---
+- hosts: "{{ host }}"
+  remote_user: "{{ user }}"
+  strategy: free
+  gather_facts: no
+  vars:
+  tasks:
+      - name: Create a directory if it does not exist
+        file:
+          path: "{{ folderpath }}/ansible_script"
+          state: directory
+          mode: '0755'
+          
+      - name: Transfer executable script script
+        copy: src=platform_health_check.sh dest="{{ folderpath }}/ansible_script" mode=0777
+        
+      #- name: Install dos2unix
+      #  command: sudo yum install dos2unix -y
+        
+      #- name: Run dos2unix on shell file
+      #  command: dos2unix /home/ec2-user/ansible_script/platform_health_check.sh    
+ 
+      - name: Execute the script      
+        command: sh {{ folderpath }}/ansible_script/platform_health_check.sh "{{ cpu_usage }}" "{{ disk_usage }}" "tmpfs" "{{ io_usage }}" "{{ memory_usage }}" "{{ network_usage }}" {{ filesystem }} "{{ frequent_alert }}"
+        register: result
+
+      - name: Copy consolidated outpot to log
+        copy: content={{ result.stdout }} dest={{ folderpath }}/ansible_script/Health_Check_Report_{{ nodenumber }}.log
+        
+      - name: Store file into /tmp/tmp_reports/
+        fetch:
+          src: "{{ folderpath }}/ansible_script/Health_Check_Report_{{ nodenumber }}.log"
+          dest: /tmp/tmp_reports/
+          flat: yes
+        register: fetch_output          
+          
+      - name: Ansible delete file wildcard
+        find:
+          paths: "{{ folderpath }}/ansible_script"
+          patterns: "*.*"
+        register: files_to_delete
+
+      - name: Ansible remove file wildcard
+        file:
+          path: "{{ item.path }}"
+          state: absent
+        with_items: "{{ files_to_delete.files }}" 
+        
+     # - name: Remove directory
+      #  file:
+      #    path: "{{ folderpath }}/ansible_script"
+      #    state: absent          
