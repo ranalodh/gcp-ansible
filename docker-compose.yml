@@ -1,0 +1,80 @@
+#*****************************************************************************
+#
+#Author:     Ranadip Lodh
+#Purpose:    This YML file use to install Ansible AWX 3.0
+#Date:       07/04/2020
+#
+#To run the file, following commands need to run
+#             docker-compose up -d
+#
+#*****************************************************************************
+version: '3'
+services:
+  postgres:
+    #image: "postgres:9.6"
+    build: postgres_9.6/.
+    environment:
+      POSTGRES_USER: awx
+      POSTGRES_PASSWORD: awxpass
+      POSTGRES_DB: awx
+
+  rabbitmq:
+    #image: "rabbitmq:3"
+    build: rabbitmq_3/.
+    environment:
+      RABBITMQ_DEFAULT_VHOST: awx
+
+  memcached:
+    #image: "memcached:1.5.9"
+    build: memcached_1.5.19/.
+
+  awx_web:
+    #image: "ansible/awx_web:3.0.0"
+    build: awx_web_3/.
+    links:
+      - rabbitmq
+      - memcached
+      - postgres
+    ports:
+      - "80:8052"
+    hostname: awxweb
+    user: root
+    environment:
+      SECRET_KEY: aabbcc
+      DATABASE_USER: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_NAME: awx
+      DATABASE_PORT: 5432
+      DATABASE_HOST: postgres
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_VHOST: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
+
+  awx_task:
+    #image: "ansible/awx_task:3.0.0"
+    build: awx_task_3/.
+    links:
+      - rabbitmq
+      - memcached
+      - awx_web:awxweb
+      - postgres
+    hostname: awx
+    user: root
+    environment:
+      SECRET_KEY: aabbcc
+      DATABASE_USER: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_NAME: awx
+      DATABASE_PORT: 5432
+      DATABASE_HOST: postgres
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_VHOST: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
